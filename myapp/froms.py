@@ -14,7 +14,7 @@ from myapp.models import Product
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ('name','price','description','slug')
+        fields = ('name','price','description','slug','image')
         #fields = ("__all__")
         error_messages = {
             "name": {
