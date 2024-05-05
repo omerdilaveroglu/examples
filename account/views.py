@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, logout,login
-from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, logout,login,update_session_auth_hash
 from django.contrib import messages
+from account.froms import LoginUserForm, NewUserForm
+from django.contrib.auth.forms import PasswordChangeForm
 
 # Create your views here.
 
@@ -12,53 +13,57 @@ def login_request(request):
         return redirect("products")
 
     if request.method == "POST":
-        username = request.POST["username"]
-        password = request.POST["password"]
-
-        user = authenticate(request=request, username=username, password=password)
+        form = LoginUserForm(request,data = request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password")
+            user = authenticate(request,username=username,password=password)
         
-        if user is not None:
-            login(request=request,user=user)
-            nextUrl = request.GET.get('next',None)
-            print(nextUrl)
-            if nextUrl is None:
-                messages.success(request,"login başarılı")
-                return redirect('products')
+            if user is not None:
+                login(request,user)
+                return redirect("products")
             else:
-                return redirect(nextUrl)
+                return render(request,"account/login.html",{'form':form})
         else:
-            messages.error(request,"kullanıcı adı veya parola hatalı")
-            return render(request,"account/login.html")
-
-    elif request.method == "GET":
-        return render(request, "account/login.html")
+            return render(request,"account/login.html",{'form':form})
+    else:
+        form = LoginUserForm()
+        return render(request,"account/login.html",{'form':form})
 
 
 def register_request(request):
     if request.method == "POST":
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        repassword = request.POST['repassword']
+        form = NewUserForm(request.POST)
 
-        if password == repassword:
-            if User.objects.filter(username = username).exists():
-                return render(request, "account/register.html",{"error":"username kullanılıyor."})
-            else:
-                if User.objects.filter(email = email).exists():
-                    return render(request, "account/register.html",{"error":"email kullanılıyor."})
-                else:
-                    user = User.objects.create_user(username==username,email=email,password=password)
-                    user.save()
-                    return redirect("login")
+        if form.is_valid():
+            form.save()
+
+            username = form.cleaned_data["username"]
+            password = form.cleaned_data["password1"]
+            user = authenticate(username=username,password=password)
+            login(request,user)
+            return redirect("login")
         else:
-            return render(request, "account/register.html",{"error":"parola eşleşmiyor."})
-
-    elif request.method == "GET":
-        return render(request, "account/register.html")
-
+            return render(request,"account/register.html",{"form":form})
+    form = NewUserForm()
+    return render(request,"account/register.html",{"form":form})
 
 def logout_request(request):
     logout(request)
     messages.success(request,"Uygulamadan çıkıldı.")
     return redirect("products")
+
+
+def change_password(request):
+    if request.method =="POST":
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request,user)
+            messages.success(request,"parola değiştirildi.")
+            return redirect("change_password")
+        else:
+            return render(request,"account/change_password.html",{"form":form})
+        
+    form = PasswordChangeForm(request.user)
+    return render(request,"account/change_password.html",{"form":form})
