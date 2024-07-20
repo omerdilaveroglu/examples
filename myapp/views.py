@@ -19,8 +19,8 @@ def index(request):
 
 @login_required(login_url='/account/login')
 def list(request):
-    if 'q' in request.GET and request.GET.get('q'):
-        q = request.GET['q']
+    if 'search_name' in request.GET and request.GET.get('search_name'):
+        q = request.GET['search_name']
         products = Product.objects.filter(name__contains=q).order_by("-price")
     else:
         products = Product.objects.all().order_by("-price")

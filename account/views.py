@@ -6,7 +6,6 @@ from django.contrib.auth.forms import PasswordChangeForm
 
 # Create your views here.
 
-
 def login_request(request):
 
     if request.user.is_authenticated:
@@ -29,7 +28,6 @@ def login_request(request):
     else:
         form = LoginUserForm()
         return render(request,"account/login.html",{'form':form})
-
 
 def register_request(request):
     if request.method == "POST":
